@@ -26,7 +26,7 @@ import (
 )
 
 type histogram struct {
-	upperBounds []int
+	upperBounds []float64
 	counts      []int64
 	count       int64
 	sum         int64
@@ -59,8 +59,8 @@ func (h *histogram) Info() ycsb.MeasurementInfo {
 	}
 
 	avg := int64(float64(sum) / float64(count))
-	per95 := int(0)
-	per99 := int(0)
+	per95 := float64(0)
+	per99 := float64(0)
 
 	opCount := int64(0)
 	for i := 0; i < len(counts); i++ {
@@ -94,9 +94,9 @@ func newHistogram(_ *properties.Properties) *histogram {
 	h.startTime = time.Now()
 	// TODO: support defining buckets from properties
 	// bucket unit is 1ms
-	h.upperBounds = make([]int, 1024)
+	h.upperBounds = make([]float64, 1024)
 	for i := 0; i < len(h.upperBounds); i++ {
-		h.upperBounds[i] = (i + 1) * 1000
+		h.upperBounds[i] = float64((i + 1) * 1000);
 	}
 	h.counts = make([]int64, len(h.upperBounds))
 	h.min = math.MaxInt64
@@ -110,7 +110,7 @@ func (h *histogram) Measure(latency time.Duration) {
 	atomic.AddInt64(&h.sum, n)
 	atomic.AddInt64(&h.count, 1)
 
-	i := sort.SearchInts(h.upperBounds, int(n))
+	i := sort.SearchFloat64s(h.upperBounds, float64(n))
 	if i < len(h.counts) {
 		atomic.AddInt64(&h.counts[i], 1)
 	}
@@ -150,8 +150,8 @@ func (h *histogram) Summary() string {
 	}
 
 	avg := int64(float64(sum) / float64(count))
-	per95 := int(0)
-	per99 := int(0)
+	per95 := float64(0)
+	per99 := float64(0)
 
 	opCount := int64(0)
 	for i := 0; i < len(counts); i++ {
@@ -176,8 +176,8 @@ func (h *histogram) Summary() string {
 	buf.WriteString(fmt.Sprintf("Avg(us): %d, ", avg))
 	buf.WriteString(fmt.Sprintf("Min(us): %d, ", min))
 	buf.WriteString(fmt.Sprintf("Max(us): %d, ", max))
-	buf.WriteString(fmt.Sprintf("95th(us): %d, ", per95))
-	buf.WriteString(fmt.Sprintf("99th(us): %d", per99))
+	buf.WriteString(fmt.Sprintf("95th(us): %.1f, ", per95))
+	buf.WriteString(fmt.Sprintf("99th(us): %.1f", per99))
 
 	return buf.String()
 }
